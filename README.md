@@ -14,6 +14,8 @@ python main.py
 
 ## 開始遊戲（網頁版）
 
+[👉 點我開始遊戲](index.html)
+
 直接用瀏覽器開啟 `index.html`，即可體驗互動式劍俠遊戲。
 
 ## 功能
