@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>劍俠江湖 - 互動網頁版</title>
+    <style>
+        body { font-family: 'Noto Sans TC', Arial, sans-serif; background: #f5f5e6; color: #222; }
+        #game { max-width: 500px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #aaa; padding: 24px; }
+        button { margin: 8px 4px; padding: 8px 18px; font-size: 1em; border-radius: 4px; border: 1px solid #888; background: #e0e0d0; cursor: pointer; }
+        button:hover { background: #d0cfc0; }
+        #log { min-height: 120px; margin-bottom: 16px; white-space: pre-line; }
+        #status { margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+<div id="game">
+    <h2>劍俠江湖</h2>
+    <div id="status"></div>
+    <div id="log"></div>
+    <div id="actions"></div>
+</div>
+<script>
+class Character {
+    constructor(name, hp, attack, defense) {
+        this.name = name;
+        this.hp = hp;
+        this.attack = attack;
+        this.defense = defense;
+    }
+    isAlive() { return this.hp > 0; }
+    takeDamage(dmg) {
+        this.hp -= Math.max(0, dmg - this.defense);
+        if (this.hp < 0) this.hp = 0;
+    }
+}
+class Player extends Character {
+    constructor(name) {
+        super(name, 30, 6, 2);
+        this.exp = 0;
+    }
+}
+class Enemy extends Character {}
+
+let player = null;
+let enemy = null;
+let state = 'intro';
+
+function showStatus() {
+    document.getElementById('status').textContent = player ? `【${player.name}】HP:${player.hp} 攻擊:${player.attack} 防禦:${player.defense} 經驗:${player.exp}` : '';
+}
+function log(msg) {
+    document.getElementById('log').textContent = msg;
+}
+function setActions(btns) {
+    const actions = document.getElementById('actions');
+    actions.innerHTML = '';
+    btns.forEach(([text, handler]) => {
+        const b = document.createElement('button');
+        b.textContent = text;
+        b.onclick = handler;
+        actions.appendChild(b);
+    });
+}
+function intro() {
+    log('你是一名初入江湖的年輕劍客，踏上尋找武林祕寶的旅程。\n一切由這裡開始...');
+    setActions([
+        ['開始冒險', askName]
+    ]);
+}
+function askName() {
+    const name = prompt('請輸入你的名字：', '劍俠');
+    if (!name) return;
+    player = new Player(name);
+    showStatus();
+    log(`歡迎你，${player.name}！你的冒險即將展開。`);
+    setTimeout(mainMenu, 800);
+}
+function mainMenu() {
+    showStatus();
+    log('你來到一個岔路口：\n1. 前往山林小徑\n2. 進入小鎮茶館\n3. 查看角色狀態\n4. 離開遊戲');
+    setActions([
+        ['山林小徑', forestPath],
+        ['小鎮茶館', teaHouse],
+        ['角色狀態', showPlayerStatus],
+        ['離開遊戲', quitGame]
+    ]);
+}
+function forestPath() {
+    enemy = new Enemy('山賊', 18, 5, 1);
+    log('你遇到了山賊！戰鬥開始！');
+    showStatus();
+    battleTurn();
+}
+function teaHouse() {
+    log('你在茶館遇到一位神秘老者，獲得指點，攻擊力+2！');
+    player.attack += 2;
+    showStatus();
+    setActions([
+        ['返回岔路口', mainMenu]
+    ]);
+}
+function showPlayerStatus() {
+    showStatus();
+    log('');
+    setActions([
+        ['返回岔路口', mainMenu]
+    ]);
+}
+function quitGame() {
+    log('感謝遊玩，江湖再見！');
+    setActions([]);
+}
+function battleTurn() {
+    showStatus();
+    log(`你的HP: ${player.hp}  ${enemy.name}的HP: ${enemy.hp}`);
+    setActions([
+        ['攻擊', playerAttack],
+        ['恢復', playerHeal],
+        ['逃跑', runAway]
+    ]);
+}
+function playerAttack() {
+    const dmg = player.attack + Math.floor(Math.random()*5)-2;
+    enemy.takeDamage(dmg);
+    let msg = `你攻擊了${enemy.name}，造成${dmg}點傷害！\n`;
+    if (enemy.isAlive()) {
+        const edmg = enemy.attack + Math.floor(Math.random()*3)-1;
+        player.takeDamage(edmg);
+        msg += `${enemy.name}攻擊你，造成${edmg}點傷害！`;
+        log(msg);
+        if (player.isAlive()) {
+            setTimeout(battleTurn, 600);
+        } else {
+            log('你被擊敗了...遊戲結束！');
+            setActions([]);
+        }
+    } else {
+        log(`你擊敗了${enemy.name}！`);
+        player.exp += 10;
+        setActions([
+            ['返回岔路口', mainMenu]
+        ]);
+    }
+    showStatus();
+}
+function playerHeal() {
+    const heal = Math.floor(Math.random()*6)+3;
+    player.hp += heal;
+    log(`你恢復了${heal}點HP！`);
+    setTimeout(()=>{
+        const edmg = enemy.attack + Math.floor(Math.random()*3)-1;
+        player.takeDamage(edmg);
+        log(`山賊攻擊你，造成${edmg}點傷害！`);
+        if (player.isAlive()) {
+            setTimeout(battleTurn, 600);
+        } else {
+            log('你被擊敗了...遊戲結束！');
+            setActions([]);
+        }
+        showStatus();
+    }, 600);
+    showStatus();
+}
+function runAway() {
+    log('你選擇逃跑...');
+    setActions([
+        ['返回岔路口', mainMenu]
+    ]);
+}
+intro();
+</script>
+</body>
+</html>
